@@ -8,24 +8,24 @@ public class BotMover : MonoBehaviour
 
     private float _minimumDistance = 1f;
     private Vector3 _direction;
+    private Vector3 _startPosition;
     private Coroutine _movingCoroutine;
+    private bool _isMovingToBase;
 
-    public event Action ReachedTheTarget;
+    public event Action BarrelReached;
+    public event Action BaseReached;
 
-    public void StartMoving(Vector3 target)
+    private void Start()
+    {
+        _startPosition = transform.position;
+    }
+
+    private void StartMoving(Vector3 target)
     {
         if (_movingCoroutine != null)
             StopCoroutine(_movingCoroutine);
 
         _movingCoroutine = StartCoroutine(MoveToTarget(target));
-    }
-
-    public void StopMoving()
-    {
-        if (_movingCoroutine != null)
-            StopCoroutine(_movingCoroutine);
-
-        _movingCoroutine = null;
     }
 
     private IEnumerator MoveToTarget(Vector3 target)
@@ -38,10 +38,37 @@ public class BotMover : MonoBehaviour
 
             distance = (transform.localPosition - target).sqrMagnitude;
             _direction = (target - transform.position).normalized;
-            transform.position += _direction * _speed * Time.deltaTime;
+            transform.position = Vector3.MoveTowards(transform.position, target, _speed * Time.deltaTime);
             transform.rotation = Quaternion.LookRotation(_direction);
         }
 
-        ReachedTheTarget?.Invoke();
+        if (_isMovingToBase)
+        {
+            BaseReached?.Invoke();
+        }
+        else
+        {
+            BarrelReached?.Invoke();
+        }
+    }
+
+    public void MoveToBarrel(Vector3 barrelPosition)
+    {
+        _isMovingToBase = false;
+        StartMoving(barrelPosition);
+    }
+
+    public void MoveToBase()
+    {
+        _isMovingToBase = true;
+        StartMoving(_startPosition);
+    }
+
+    public void StopMoving()
+    {
+        if (_movingCoroutine != null)
+            StopCoroutine(_movingCoroutine);
+
+        _movingCoroutine = null;
     }
 }

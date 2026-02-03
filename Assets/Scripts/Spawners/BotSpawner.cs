@@ -1,33 +1,24 @@
-using System.Collections.Generic;
 using UnityEngine;
 
-public class BotSpawner : Spawner<Bot>
+public class BotSpawner : MonoBehaviour
 {
-    private List<Bot> _bots = new List<Bot>();
+    [SerializeField] private Bot _prefab;
+    [SerializeField] private int _initialBotCount = 3;
+    [SerializeField] private Collider _spawnArea;
+    [SerializeField] private BotStorage _storage;
 
-    protected override void SpawnObject()
+    private void Start()
     {
-        if (Pool.CountActive < PoolMaxSize)
+        for (int i = 0; i < _initialBotCount; i++)
         {
-            Bot bot = Pool.Get();
-            bot.transform.localPosition = GenerateRandomPosition();
-            _bots.Add(bot);
+            SpawnObject();
         }
     }
 
-    protected override Vector3 GenerateRandomPosition()
+    private void SpawnObject()
     {
-        Bounds bounds = _spawnArea.bounds;
-
-        return new Vector3(
-            Random.Range(bounds.min.x, bounds.max.x),
-            Random.Range(bounds.min.y, bounds.max.y),
-            Random.Range(bounds.min.z, bounds.min.z)
-        );
-    }
-
-    public List<Bot> GetAllBots()
-    {
-        return new List<Bot>(_bots);
+        Bot bot = Instantiate(_prefab);
+        bot.transform.position = transform.position;
+        _storage.AddBot(bot);
     }
 }

@@ -2,9 +2,8 @@ using System;
 using System.Collections;
 using UnityEngine;
 
-public class BarrelDetector : MonoBehaviour
+public class BarrelScanner : MonoBehaviour
 {
-    [SerializeField] private bool _isScanActive = false;
     [SerializeField] private float _scanRadius = 20f;
 
     private int _maximumTargets = 20;
@@ -13,21 +12,11 @@ public class BarrelDetector : MonoBehaviour
     private WaitForSeconds _delay = new WaitForSeconds(2);
 
     public event Action<Barrel> BarrelDetected;
-    public event Action<Barrel> BarrelFoundNearby;
 
     private void Start()
     {
-        if (_isScanActive)
-        {
-            _targets = new Collider[_maximumTargets];
-            StartCoroutine(Scaning());
-        }
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.TryGetComponent(out Barrel barrel))
-            BarrelFoundNearby?.Invoke(barrel);
+        _targets = new Collider[_maximumTargets];
+        StartCoroutine(Scaning());
     }
 
     private IEnumerator Scaning()
@@ -46,9 +35,7 @@ public class BarrelDetector : MonoBehaviour
 
         for (int i = 0; i < _targetCount; i++)
         {
-            Collider collider = _targets[i];
-
-            if (collider.TryGetComponent(out Barrel barrel) && !barrel.InProgress)
+            if (_targets[i].TryGetComponent(out Barrel barrel))
             {
                 BarrelDetected?.Invoke(barrel);
             }

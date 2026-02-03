@@ -7,10 +7,9 @@ public class Grabber : MonoBehaviour
 
     public void PickUp(Barrel barrel)
     {
-        if (barrel != null && !barrel.InTakeOver)
+        if (barrel != null)
         {
             barrel.transform.SetParent(transform);
-            barrel.Become—aptured();
             BarrelWasGrab?.Invoke();
         }
     }

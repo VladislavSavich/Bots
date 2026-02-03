@@ -535,10 +535,10 @@ GameObject:
   - component: {fileID: 4097374333933131314}
   - component: {fileID: 2383330153140699750}
   - component: {fileID: 5084098201568515077}
-  - component: {fileID: 1173364951511740329}
   - component: {fileID: 5924808881721016759}
   - component: {fileID: 3216444007284823630}
   - component: {fileID: 1241101317884057481}
+  - component: {fileID: 6031075179939091327}
   m_Layer: 0
   m_Name: Base
   m_TagString: Untagged
@@ -673,10 +673,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 849a2110b56cb5d46a60e4690a53cdd0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Prefab: {fileID: 3049374844833969212, guid: 07f45972bdf761443b4809acb830cc80, type: 3}
-  PoolCapacity: 3
-  PoolMaxSize: 3
+  _prefab: {fileID: 0}
+  _initialBotCount: 3
   _spawnArea: {fileID: 7229999637797411626}
+  _storage: {fileID: 0}
 --- !u!114 &5084098201568515077
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -689,22 +689,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e84ab4ecce21ea34da202dfc1beec47c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _manager: {fileID: 1173364951511740329}
-  _detector: {fileID: 5924808881721016759}
+  _storage: {fileID: 0}
+  _spawner: {fileID: 0}
+  _scanner: {fileID: 6031075179939091327}
   _counter: {fileID: 3216444007284823630}
---- !u!114 &1173364951511740329
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5709410723221078392}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 58125302510ed7841baec4003488ea21, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _spawner: {fileID: 2383330153140699750}
 --- !u!114 &5924808881721016759
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -717,8 +705,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2653a744c0b1f174c87f5ea5dbec7320, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _isScanActive: 1
-  _scanRadius: 50
 --- !u!114 &3216444007284823630
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -747,6 +733,19 @@ MonoBehaviour:
   _score: {fileID: 0}
   heightOffset: 0
   widthOffset: 0
+--- !u!114 &6031075179939091327
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5709410723221078392}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34f1594f8d63b784cab92a4994b63691, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _scanRadius: 20
 --- !u!1 &7611178522703158628
 GameObject:
   m_ObjectHideFlags: 0

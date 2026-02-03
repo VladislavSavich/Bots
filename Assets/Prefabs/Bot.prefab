@@ -725,7 +725,7 @@ Rigidbody:
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 1
-  m_IsKinematic: 0
+  m_IsKinematic: 1
   m_Interpolate: 0
   m_Constraints: 80
   m_CollisionDetection: 0
@@ -826,8 +826,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2653a744c0b1f174c87f5ea5dbec7320, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _isScanActive: 0
-  _scanRadius: 13.59
 --- !u!114 &1928983748679765556
 MonoBehaviour:
   m_ObjectHideFlags: 0

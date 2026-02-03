@@ -1,66 +1,55 @@
+using System;
 using UnityEngine;
 
 public class Bot : MonoBehaviour
 {
     [SerializeField] private BotMover _mover;
     [SerializeField] private BotAnimator _animator;
-    [SerializeField] private BarrelDetector _detector;
     [SerializeField] private Grabber _grabber;
 
     private Barrel _targetBarrel;
-    private Vector3 _startPosition;
-    private bool _isBusy;
 
-    public bool IsActive => _isBusy;
-
-    private void Start()
-    {
-        _startPosition = transform.position;
-    }
+    public event Action<Barrel, Bot> BarrelWasDelivered;
+    public bool IsActive { get; private set; }
 
     private void OnEnable()
     {
-        _detector.BarrelFoundNearby += CheckTarget;
-        _mover.ReachedTheTarget += ResetTarget;
-        _grabber.BarrelWasGrab += GoBack;
+        _mover.BarrelReached += OnBarrelReached;
+        _mover.BaseReached += OnBaseReached;
     }
 
     private void OnDisable()
     {
-        _detector.BarrelFoundNearby -= CheckTarget;
-        _mover.ReachedTheTarget -= ResetTarget;
-        _grabber.BarrelWasGrab -= GoBack;
+        _mover.BarrelReached -= OnBarrelReached;
+        _mover.BaseReached -= OnBaseReached;
     }
 
-    private void CheckTarget(Barrel barrel)
+    private void OnBarrelReached()
     {
-        if (barrel == _targetBarrel)
-            _grabber.PickUp(barrel);
-    }
-
-    private void GoBack()
-    {
-        _isBusy = true;
-        _mover.StartMoving(_startPosition);
+        _mover.StopMoving();
+        _grabber.PickUp(_targetBarrel);
         _animator.SetupWalkWithBarrel();
+        _mover.MoveToBase();
     }
 
-    private void ResetTarget()
+    private void OnBaseReached()
     {
-        _isBusy = false;
+        Barrel deliveredBarrel = _targetBarrel;
         _targetBarrel = null;
+        deliveredBarrel.transform.SetParent(null);
         _mover.StopMoving();
         _animator.SetupStaticIdle();
+        BarrelWasDelivered?.Invoke(deliveredBarrel, this);
+        IsActive = false;
     }
 
     public void SetTarget(Barrel barrel)
     {
-        if (!barrel.InProgress)
+        if (barrel != null)
         {
-            _isBusy = true;
+            IsActive = true;
             _targetBarrel = barrel;
-            barrel.BecomeTask();
-            _mover.StartMoving(barrel.transform.position);
+            _mover.MoveToBarrel(barrel.transform.position);
             _animator.SetupWalk();
         }
     }

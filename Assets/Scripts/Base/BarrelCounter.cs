@@ -19,12 +19,9 @@ public class BarrelCounter : MonoBehaviour
         CountChanged?.Invoke(_count);
     }
 
-    public void AddCount(Barrel barrel)
+    public void AddCount()
     {
-        if (barrel != null)
-        {
-            _count++;
-            CountChanged?.Invoke(_count);
-        }
+        _count++;
+        CountChanged?.Invoke(_count);
     }
 }
