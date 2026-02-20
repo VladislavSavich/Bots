@@ -5,6 +5,7 @@ using UnityEngine;
 public class BarrelScanner : MonoBehaviour
 {
     [SerializeField] private float _scanRadius = 20f;
+    [SerializeField] private LayerMask _barrelLayer;
 
     private int _maximumTargets = 20;
     private int _targetCount;
@@ -31,7 +32,7 @@ public class BarrelScanner : MonoBehaviour
 
     private void ScanZone()
     {
-        _targetCount = Physics.OverlapSphereNonAlloc(transform.position, _scanRadius, _targets);
+        _targetCount = Physics.OverlapSphereNonAlloc(transform.position, _scanRadius, _targets, _barrelLayer);
 
         for (int i = 0; i < _targetCount; i++)
         {

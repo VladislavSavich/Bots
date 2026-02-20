@@ -1,125 +1,146 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Base : MonoBehaviour
 {
     [SerializeField] private BotStorage _storage;
-    [SerializeField] private BarrelSpawner _spawner;
+    [SerializeField] private BotService _botService;
+    [SerializeField] private BotSpawner _botSpawner;
+    [SerializeField] private BarrelService _barrelService;
+    [SerializeField] private BarrelSpawner _barrelSpawner;
     [SerializeField] private BarrelScanner _scanner;
     [SerializeField] private BarrelCounter _counter;
+    [SerializeField] private ClickHandler _clickHandler;
+    [SerializeField] private FlagMaker _flagMaker;
+    [SerializeField] private int _maximumBotCount;
 
+    private int _minBotForColonization = 1;
+    private bool _isColonizationStarted = false;
     private WaitForSeconds _delay = new WaitForSeconds(0.1f);
-    private Queue<Barrel> _foundedBarrels = new Queue<Barrel>();
-    private List<Barrel> _occupiedBarrels = new List<Barrel>();
-    private Queue<Bot> _freeBots = new Queue<Bot>();
-    private List<Bot> _subscribedBots = new List<Bot>();
-    private Coroutine _waitingCoroutine;
+    private Coroutine _mainCoroutine;
+
+    private void Awake()
+    {
+        if (_barrelSpawner == null)
+            _barrelSpawner = FindObjectOfType<BarrelSpawner>();
+
+        if (_barrelService == null)
+            _barrelService = FindObjectOfType<BarrelService>();
+
+        if (_botService == null)
+            _botService = FindObjectOfType<BotService>();
+    }
+
+    private void Start()
+    {
+        _mainCoroutine = StartCoroutine(TaskLoop());
+    }
 
     private void OnEnable()
     {
         _storage.OnBotAdded += SubscribeToBot;
-        _scanner.BarrelDetected += AddTask;
+        _scanner.BarrelDetected += _barrelService.AddTask;
+        _barrelService.TaskReceived += StartTask;
+        _counter.EnoughBarrelsForSpawn += CheckNumbersOfBot;
+        _clickHandler.BaseClicked += _flagMaker.StartWaitingForFlag;
     }
 
     private void OnDisable()
     {
-        UnsubscribeFromAllBots();
-        _scanner.BarrelDetected -= AddTask;
+        _storage.OnBotAdded -= SubscribeToBot;
+        _scanner.BarrelDetected -= _barrelService.AddTask;
+        _barrelService.TaskReceived -= StartTask;
+        _counter.EnoughBarrelsForSpawn -= CheckNumbersOfBot;
+        _clickHandler.BaseClicked -= _flagMaker.StartWaitingForFlag;
     }
 
-    private void SubscribeToBot(Bot bot)
+    private void CheckNumbersOfBot()
     {
-        bot.BarrelWasDelivered += TaskComplete;
-        _subscribedBots.Add(bot);
-
-        if (!bot.IsActive && !_freeBots.Contains(bot))
+        if (!_flagMaker.IsFlagStand && _storage.NumberOfBots < _maximumBotCount)
         {
-            _freeBots.Enqueue(bot);
-        }
-    }
-
-    private void UnsubscribeFromAllBots()
-    {
-        foreach (Bot bot in _subscribedBots)
-        {
-            bot.BarrelWasDelivered -= TaskComplete;
-        }
-
-        _subscribedBots.Clear();
-    }
-
-    private void AddTask(Barrel barrel)
-    {
-        if (barrel != null && !_occupiedBarrels.Contains(barrel) && !_foundedBarrels.Contains(barrel))
-        {
-            _foundedBarrels.Enqueue(barrel);
-
-            StartTask();
+            _botSpawner.SpawnObject();
+            _counter.ReduceCount(_counter.BarrelsForBot);
         }
     }
 
     private void StartTask()
     {
-        if (_waitingCoroutine != null)
-            StopCoroutine(_waitingCoroutine);
-
-        while (_freeBots.Count > 0 && _foundedBarrels.Count > 0)
+        while (_botService.HasFreeBots && _barrelService.HasTasks)
         {
-            Barrel barrel = _foundedBarrels.Peek();
-            Bot bot = _freeBots.Peek();
-
-            if (barrel == null)
+            if (_botService.TryGetFreeBot(out Bot bot))
             {
-                _foundedBarrels.Dequeue();
+                if (_flagMaker.IsFlagStand && _counter.IsEnoughForBase && !_isColonizationStarted && _storage.NumberOfBots > _minBotForColonization)
+                {
+                    bot.SetFlagPosition(_flagMaker.FlagPosition);
+                    _isColonizationStarted = true;
+                }
+                else
+                {
+                    if (_barrelService.TryGetTask(out Barrel barrel))
+                    {
+                        bot.SetTarget(barrel);
+                    }
+                    else
+                    {
+                        _botService.AddFreeBot(bot);
+                        continue;
+                    }
+                }
+            }
+            else
+            {
                 continue;
             }
-
-            if (bot == null || bot.IsActive)
-            {
-                _freeBots.Dequeue();
-                continue;
-            }
-
-            barrel = _foundedBarrels.Dequeue();
-            bot = _freeBots.Dequeue();
-
-            _occupiedBarrels.Add(barrel);
-            bot.SetTarget(barrel);
         }
-
-        if (_foundedBarrels.Count > 0)
-            _waitingCoroutine = StartCoroutine(SearchingFreeBot());
     }
 
-    private IEnumerator SearchingFreeBot()
+    private IEnumerator TaskLoop()
     {
         while (enabled)
         {
             yield return _delay;
 
-            FindFreeBot();
+            _botService.FindFreeBot(_storage.GetAllBots());
+
+            StartTask();
         }
     }
 
-    private void FindFreeBot()
+    private void CompleteColonization(Bot bot)
     {
-        List<Bot> bots = _storage.GetAllBots();
-
-        for (int i = 0; i < bots.Count; i++)
-        {
-            if (bots[i] != null && !bots[i].IsActive && !_freeBots.Contains(bots[i]))
-            {
-                _freeBots.Enqueue(bots[i]);
-            }
-        }
+        _flagMaker.DestroyFlag();
+        _isColonizationStarted = false;
+        UnsubscribeToBot(bot);
+        bot.SubscribeToNewBase();
+        _counter.ReduceCount(_counter.BarrelsForBase);
     }
 
     private void TaskComplete(Barrel barrel, Bot bot)
     {
-        _occupiedBarrels.Remove(barrel);
-        _spawner.ReleaseObject(barrel);
+        _barrelService.CompleteTask(barrel);
+        _barrelSpawner.ReleaseObject(barrel);
         _counter.AddCount();
-        _freeBots.Enqueue(bot);
+        _botService.AddFreeBot(bot);
+    }
+
+    public void UnsubscribeToBot(Bot bot)
+    {
+        bot.BarrelWasDelivered -= TaskComplete;
+        bot.BaseWasBuilded -= CompleteColonization;
+        _storage.RemoveBot(bot);
+    }
+
+    public void SubscribeToBot(Bot bot)
+    {
+        if (_storage.ContainsBot(bot))
+        {
+            bot.BarrelWasDelivered += TaskComplete;
+            bot.BaseWasBuilded += CompleteColonization;
+        }
+        else
+        {
+            _storage.AddBot(bot);
+            _botService.AddFreeBot(bot);
+        }
     }
 }

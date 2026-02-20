@@ -11,9 +11,11 @@ public class BotMover : MonoBehaviour
     private Vector3 _startPosition;
     private Coroutine _movingCoroutine;
     private bool _isMovingToBase;
+    private bool _isMovingToFlag;
 
     public event Action BarrelReached;
     public event Action BaseReached;
+    public event Action FlagReached;
 
     private void Start()
     {
@@ -46,22 +48,40 @@ public class BotMover : MonoBehaviour
         {
             BaseReached?.Invoke();
         }
+        else if (_isMovingToFlag)
+        {
+            FlagReached?.Invoke();
+        }
         else
         {
             BarrelReached?.Invoke();
         }
     }
 
+    public void UpdateStartPosition()
+    {
+        _startPosition = transform.position;
+    }
+
     public void MoveToBarrel(Vector3 barrelPosition)
     {
+        _isMovingToFlag = false;
         _isMovingToBase = false;
         StartMoving(barrelPosition);
     }
 
     public void MoveToBase()
     {
+        _isMovingToFlag = false;
         _isMovingToBase = true;
         StartMoving(_startPosition);
+    }
+
+    public void MoveToFlag(Vector3 flagPosition)
+    {
+        _isMovingToBase = false;
+        _isMovingToFlag = true;
+        StartMoving(flagPosition);
     }
 
     public void StopMoving()
@@ -70,5 +90,7 @@ public class BotMover : MonoBehaviour
             StopCoroutine(_movingCoroutine);
 
         _movingCoroutine = null;
+        _isMovingToBase = false;
+        _isMovingToFlag = false;
     }
 }

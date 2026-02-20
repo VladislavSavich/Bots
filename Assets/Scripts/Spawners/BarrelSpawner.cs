@@ -48,7 +48,10 @@ public class BarrelSpawner : MonoBehaviour
 
     public void ReleaseObject(Barrel barrel)
     {
-        _pool.Release(barrel);
+        if (barrel != null && barrel.gameObject.activeInHierarchy)
+        {
+            _pool.Release(barrel);
+        }
     }
 
     private IEnumerator SpawnObjectRoutine()
