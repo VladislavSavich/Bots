@@ -34,11 +34,11 @@ public class BarrelCounterView : MonoBehaviour
         _counter.CountChanged -= OnCountChanged;
     }
 
-    private void OnCountChanged(int count)
+    private void OnCountChanged()
     {
         if (_score != null)
         {
-            _score.text = count.ToString();
+            _score.text = _counter.BarrelsCount.ToString();
         }
     }
 }

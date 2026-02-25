@@ -50,6 +50,7 @@ public class BarrelSpawner : MonoBehaviour
     {
         if (barrel != null && barrel.gameObject.activeInHierarchy)
         {
+            barrel.transform.parent = null;
             _pool.Release(barrel);
         }
     }
@@ -70,6 +71,7 @@ public class BarrelSpawner : MonoBehaviour
         {
             Barrel barrel = _pool.Get();
 
+            barrel.transform.SetParent(transform);
             barrel.transform.position = GenerateRandomPosition();
         }
     }

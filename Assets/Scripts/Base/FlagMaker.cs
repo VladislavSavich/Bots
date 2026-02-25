@@ -12,7 +12,6 @@ public class FlagMaker : MonoBehaviour
 
     public Vector3 FlagPosition => _currentFlag.transform.position;
 
-
     public event Action FlagIsSet;
 
     public bool IsFlagStand { get; private set; }
@@ -54,7 +53,7 @@ public class FlagMaker : MonoBehaviour
         _currentFlag = Instantiate(_flagPrefab, position, Quaternion.identity);
     }
 
-    private void StopWaitingCoroutine()
+    public void StopWaitingCoroutine()
     {
         if (_waitingCoroutine != null)
             StopCoroutine(_waitingCoroutine);
@@ -62,9 +61,12 @@ public class FlagMaker : MonoBehaviour
 
     public void DestroyFlag()
     {
-        Destroy(_currentFlag);
-        IsFlagStand = false;
-        _currentFlag = null;
+        if (_currentFlag != null)
+        {
+            Destroy(_currentFlag);
+            IsFlagStand = false;
+            _currentFlag = null;
+        }
     }
 
     public void StartWaitingForFlag()

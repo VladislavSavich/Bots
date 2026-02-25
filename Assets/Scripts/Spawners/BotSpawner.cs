@@ -21,6 +21,7 @@ public class BotSpawner : MonoBehaviour
     public void SpawnObject()
     {
         Bot bot = Instantiate(_prefab);
+        bot.transform.SetParent(transform.parent);
         bot.transform.position = transform.position;
         _storage.AddBot(bot);
     }

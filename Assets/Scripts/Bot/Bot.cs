@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 
 public class Bot : MonoBehaviour
@@ -8,6 +9,7 @@ public class Bot : MonoBehaviour
     [SerializeField] private Grabber _grabber;
     [SerializeField] private BaseBuilder _builder;
 
+    private float _subscribeDelay = 1f;
     private Barrel _targetBarrel;
     private Base _newBase;
 
@@ -34,10 +36,10 @@ public class Bot : MonoBehaviour
 
     private void OnFlagReached()
     {
+        _builder.Build();
         _mover.UpdateStartPosition();
         _mover.StopMoving();
         _animator.SetupStaticIdle();
-        _builder.Build();
         IsActive = false;
         _targetBarrel = null;
     }
@@ -67,6 +69,16 @@ public class Bot : MonoBehaviour
         BaseWasBuilded?.Invoke(this);
     }
 
+    private IEnumerator DelayedSubscribe()
+    {
+        yield return _subscribeDelay;
+
+        if (_newBase != null)
+        {
+            _newBase.SubscribeToBot(this);
+        }
+    }
+
     public void SetTarget(Barrel barrel)
     {
         if (barrel != null)
@@ -87,6 +99,6 @@ public class Bot : MonoBehaviour
 
     public void SubscribeToNewBase()
     {
-        _newBase.SubscribeToBot(this);
+        StartCoroutine(DelayedSubscribe());
     }
 }

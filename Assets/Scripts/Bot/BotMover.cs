@@ -32,13 +32,13 @@ public class BotMover : MonoBehaviour
 
     private IEnumerator MoveToTarget(Vector3 target)
     {
-        float distance = (transform.localPosition - target).sqrMagnitude;
+        float distance = (transform.position - target).sqrMagnitude;
 
         while (distance > _minimumDistance)
         {
             yield return null;
 
-            distance = (transform.localPosition - target).sqrMagnitude;
+            distance = (transform.position - target).sqrMagnitude;
             _direction = (target - transform.position).normalized;
             transform.position = Vector3.MoveTowards(transform.position, target, _speed * Time.deltaTime);
             transform.rotation = Quaternion.LookRotation(_direction);

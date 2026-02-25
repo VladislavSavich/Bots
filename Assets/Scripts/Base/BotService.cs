@@ -1,55 +1,20 @@
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public class BotService : MonoBehaviour
 {
-    private Queue<Bot> _freeBots = new Queue<Bot>();
-
-    public bool HasFreeBots => _freeBots.Count > 0;
-
-    public bool TryGetFreeBot(out Bot bot)
+    public bool TryGetFreeBot(List<Bot> bots, out Bot bot)
     {
-        bot = null;
+        bot = bots.FirstOrDefault(b => b != null && !b.IsActive);
 
-        if (_freeBots.Count == 0)
-            return false;
-
-        bot = _freeBots.Dequeue();
-        return true;
+        return bot != null;
     }
 
-    public void AddFreeBot(Bot bot)
+    public bool HasFreeBots(List<Bot> bots)
     {
-        if (bot != null && !_freeBots.Contains(bot))
-        {
-            _freeBots.Enqueue(bot);
-        }
-    }
+        var freeBots = bots.Where(b => b != null && !b.IsActive).ToList();
 
-    public void FindFreeBot(List<Bot> bots)
-    {
-        for (int i = 0; i < bots.Count; i++)
-        {
-            if (bots[i] != null && !bots[i].IsActive && !_freeBots.Contains(bots[i]))
-            {
-                _freeBots.Enqueue(bots[i]);
-            }
-        }
-    }
-
-    public void RemoveBot(Bot bot)
-    {
-        var tempList = new List<Bot>();
-
-        while (_freeBots.Count > 0)
-        {
-            var b = _freeBots.Dequeue();
-
-            if (b != bot)
-                tempList.Add(b);
-        }
-
-        foreach (var b in tempList)
-            _freeBots.Enqueue(b);
+        return freeBots.Count > 0;
     }
 }

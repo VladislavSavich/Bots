@@ -8,7 +8,6 @@ public class BarrelScanner : MonoBehaviour
     [SerializeField] private LayerMask _barrelLayer;
 
     private int _maximumTargets = 20;
-    private int _targetCount;
     private Collider[] _targets;
     private WaitForSeconds _delay = new WaitForSeconds(2);
 
@@ -32,7 +31,7 @@ public class BarrelScanner : MonoBehaviour
 
     private void ScanZone()
     {
-        _targetCount = Physics.OverlapSphereNonAlloc(transform.position, _scanRadius, _targets, _barrelLayer);
+         int _targetCount = Physics.OverlapSphereNonAlloc(transform.position, _scanRadius, _targets, _barrelLayer);
 
         for (int i = 0; i < _targetCount; i++)
         {
