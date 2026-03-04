@@ -10,24 +10,35 @@ public class BotMover : MonoBehaviour
     private Vector3 _direction;
     private Vector3 _startPosition;
     private Coroutine _movingCoroutine;
-    private bool _isMovingToBase;
-    private bool _isMovingToFlag;
 
-    public event Action BarrelReached;
-    public event Action BaseReached;
-    public event Action FlagReached;
+    public event Action TargetReached;
+
+    public Vector3 StartPosition => _startPosition;
 
     private void Start()
     {
         _startPosition = transform.position;
     }
 
-    private void StartMoving(Vector3 target)
+    public void StartMoving(Vector3 target)
     {
         if (_movingCoroutine != null)
             StopCoroutine(_movingCoroutine);
 
         _movingCoroutine = StartCoroutine(MoveToTarget(target));
+    }
+
+    public void UpdateStartPosition()
+    {
+        _startPosition = transform.position;
+    }
+
+    public void StopMoving()
+    {
+        if (_movingCoroutine != null)
+            StopCoroutine(_movingCoroutine);
+
+        _movingCoroutine = null;
     }
 
     private IEnumerator MoveToTarget(Vector3 target)
@@ -44,53 +55,6 @@ public class BotMover : MonoBehaviour
             transform.rotation = Quaternion.LookRotation(_direction);
         }
 
-        if (_isMovingToBase)
-        {
-            BaseReached?.Invoke();
-        }
-        else if (_isMovingToFlag)
-        {
-            FlagReached?.Invoke();
-        }
-        else
-        {
-            BarrelReached?.Invoke();
-        }
-    }
-
-    public void UpdateStartPosition()
-    {
-        _startPosition = transform.position;
-    }
-
-    public void MoveToBarrel(Vector3 barrelPosition)
-    {
-        _isMovingToFlag = false;
-        _isMovingToBase = false;
-        StartMoving(barrelPosition);
-    }
-
-    public void MoveToBase()
-    {
-        _isMovingToFlag = false;
-        _isMovingToBase = true;
-        StartMoving(_startPosition);
-    }
-
-    public void MoveToFlag(Vector3 flagPosition)
-    {
-        _isMovingToBase = false;
-        _isMovingToFlag = true;
-        StartMoving(flagPosition);
-    }
-
-    public void StopMoving()
-    {
-        if (_movingCoroutine != null)
-            StopCoroutine(_movingCoroutine);
-
-        _movingCoroutine = null;
-        _isMovingToBase = false;
-        _isMovingToFlag = false;
+        TargetReached?.Invoke();
     }
 }

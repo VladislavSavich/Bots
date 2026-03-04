@@ -18,8 +18,8 @@ public class BarrelSpawner : MonoBehaviour
     {
         _pool = new ObjectPool<Barrel>(
         createFunc: () => Instantiate(_prefab),
-        actionOnGet: (barrel) => ActionOnGet(barrel),
-        actionOnRelease: (barrel) => ActionOnRelease(barrel),
+        actionOnGet: (barrel) => OnGetAction(barrel),
+        actionOnRelease: (barrel) => OnReleaseAction(barrel),
         actionOnDestroy: (barrel) => Destroy(barrel),
         collectionCheck: true,
         defaultCapacity: _poolCapacity,
@@ -36,23 +36,14 @@ public class BarrelSpawner : MonoBehaviour
         _respawnCoroutine = StartCoroutine(SpawnObjectRoutine());
     }
 
-    private void ActionOnGet(Barrel barrel)
+    private void OnGetAction(Barrel barrel)
     {
         barrel.gameObject.SetActive(true);
     }
 
-    private void ActionOnRelease(Barrel barrel)
+    private void OnReleaseAction(Barrel barrel)
     {
         barrel.gameObject.SetActive(false);
-    }
-
-    public void ReleaseObject(Barrel barrel)
-    {
-        if (barrel != null && barrel.gameObject.activeInHierarchy)
-        {
-            barrel.transform.parent = null;
-            _pool.Release(barrel);
-        }
     }
 
     private IEnumerator SpawnObjectRoutine()
@@ -85,5 +76,14 @@ public class BarrelSpawner : MonoBehaviour
             Random.Range(bounds.min.y, bounds.max.y),
             Random.Range(bounds.min.z, bounds.max.z)
         );
+    }
+
+    public void ReleaseObject(Barrel barrel)
+    {
+        if (barrel != null && barrel.gameObject.activeInHierarchy)
+        {
+            barrel.transform.parent = null;
+            _pool.Release(barrel);
+        }
     }
 }

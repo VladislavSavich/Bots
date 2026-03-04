@@ -4,15 +4,17 @@ using System;
 
 public class FlagMaker : MonoBehaviour
 {
-    [SerializeField] private GameObject _flagPrefab;
+    [SerializeField] private Rigidbody _prefab;
     [SerializeField] private Camera _camera;
+    [SerializeField] private InputReader _inputReader;
 
+    private bool _isFlagCreated = false;
     private Coroutine _waitingCoroutine;
-    private GameObject _currentFlag;
-
-    public Vector3 FlagPosition => _currentFlag.transform.position;
+    private Rigidbody _currentFlag;
 
     public event Action FlagIsSet;
+
+    public Vector3 FlagPosition => _currentFlag.transform.position;
 
     public bool IsFlagStand { get; private set; }
 
@@ -22,35 +24,10 @@ public class FlagMaker : MonoBehaviour
             _camera = FindObjectOfType<Camera>();
     }
 
-    private IEnumerator WaitingFlag()
+    public void StartWaitingForFlag()
     {
-        while (enabled)
-        {
-            if (Input.GetMouseButtonDown(0))
-            {
-                if (_currentFlag != null)
-                    DestroyFlag();
-
-                Ray ray = _camera.ScreenPointToRay(Input.mousePosition);
-
-                if (Physics.Raycast(ray, out RaycastHit hit))
-                {
-                    if (!hit.collider.TryGetComponent<Base>(out _))
-                    {
-                        CreateFlag(hit.point);
-                        IsFlagStand = true;
-                        FlagIsSet?.Invoke();
-                    }
-                }
-            }
-
-            yield return null;
-        }
-    }
-
-    private void CreateFlag(Vector3 position)
-    {
-        _currentFlag = Instantiate(_flagPrefab, position, Quaternion.identity);
+        StopWaitingCoroutine();
+        _waitingCoroutine = StartCoroutine(WaitingFlag());
     }
 
     public void StopWaitingCoroutine()
@@ -63,16 +40,46 @@ public class FlagMaker : MonoBehaviour
     {
         if (_currentFlag != null)
         {
-            Destroy(_currentFlag);
+            _currentFlag.gameObject.SetActive(false);
             IsFlagStand = false;
-            _currentFlag = null;
         }
     }
 
-    public void StartWaitingForFlag()
+    private void CreateFlag(Vector3 position)
     {
-        StopWaitingCoroutine();
+        _currentFlag = Instantiate(_prefab, position, Quaternion.identity);
+    }
 
-        _waitingCoroutine = StartCoroutine(WaitingFlag());
+    private IEnumerator WaitingFlag()
+    {
+        while (enabled)
+        {
+            if (_inputReader.GetIsTouch()) 
+            {
+                Ray ray = _camera.ScreenPointToRay(Input.mousePosition);
+
+                if (Physics.Raycast(ray, out RaycastHit hit))
+                {
+                    if (hit.collider.TryGetComponent<Base>(out _))
+                        continue;
+
+                    if (!_isFlagCreated)
+                    {
+                        CreateFlag(hit.point);
+                        _isFlagCreated = true;
+                    }
+                    else
+                    {
+                        _currentFlag.transform.position = hit.point;
+                        _currentFlag.gameObject.SetActive(true);
+                    }
+
+                    IsFlagStand = true;
+                    FlagIsSet?.Invoke();
+                }
+            }
+
+            yield return null;
+        }
     }
 }

@@ -12,6 +12,8 @@ public class Bot : MonoBehaviour
     private float _subscribeDelay = 1f;
     private Barrel _targetBarrel;
     private Base _newBase;
+    private bool _isMovingToBase;
+    private bool _isMovingToFlag;
 
     public event Action<Barrel, Bot> BarrelWasDelivered;
     public event Action<Bot> BaseWasBuilded;
@@ -20,18 +22,57 @@ public class Bot : MonoBehaviour
 
     private void OnEnable()
     {
-        _mover.BarrelReached += OnBarrelReached;
-        _mover.BaseReached += OnBaseReached;
-        _mover.FlagReached += OnFlagReached;
+        _mover.TargetReached += CheckTarget;
         _builder.BaseBuilded += SetNewBase;
     }
 
     private void OnDisable()
     {
-        _mover.BarrelReached -= OnBarrelReached;
-        _mover.BaseReached -= OnBaseReached;
-        _mover.FlagReached -= OnFlagReached;
+        _mover.TargetReached -= CheckTarget;
         _builder.BaseBuilded -= SetNewBase;
+    }
+
+    public void SetTarget(Barrel barrel)
+    {
+        if (barrel != null)
+        {
+            IsActive = true;
+            _targetBarrel = barrel;
+            _isMovingToFlag = false;
+            _isMovingToBase = false;
+            _mover.StartMoving(barrel.transform.position);
+            _animator.SetupWalk();
+        }
+    }
+
+    public void SetFlagPosition(Vector3 position)
+    {
+        IsActive = true;
+        _isMovingToBase = false;
+        _isMovingToFlag = true;
+        _mover.StartMoving(position);
+        _animator.SetupWalk();
+    }
+
+    public void SubscribeWithDelay()
+    {
+        Invoke(nameof(SubscribeToNewBase), _subscribeDelay);
+    }
+
+    private void CheckTarget()
+    {
+        if (_isMovingToBase)
+        {
+            OnBaseReached();
+        }
+        else if (_isMovingToFlag)
+        {
+            OnFlagReached();
+        }
+        else
+        {
+            OnBarrelReached();
+        }
     }
 
     private void OnFlagReached()
@@ -40,8 +81,10 @@ public class Bot : MonoBehaviour
         _mover.UpdateStartPosition();
         _mover.StopMoving();
         _animator.SetupStaticIdle();
-        IsActive = false;
+        _isMovingToFlag = false;
+        _isMovingToBase = false;
         _targetBarrel = null;
+        IsActive = false;
     }
 
     private void OnBarrelReached()
@@ -49,7 +92,9 @@ public class Bot : MonoBehaviour
         _mover.StopMoving();
         _grabber.PickUp(_targetBarrel);
         _animator.SetupWalkWithBarrel();
-        _mover.MoveToBase();
+        _mover.StartMoving(_mover.StartPosition);
+        _isMovingToBase = true;
+        _isMovingToFlag = false;
     }
 
     private void OnBaseReached()
@@ -58,6 +103,8 @@ public class Bot : MonoBehaviour
         _targetBarrel = null;
         deliveredBarrel.transform.SetParent(null);
         _mover.StopMoving();
+        _isMovingToFlag = false;
+        _isMovingToBase = false;
         _animator.SetupStaticIdle();
         BarrelWasDelivered?.Invoke(deliveredBarrel, this);
         IsActive = false;
@@ -69,36 +116,9 @@ public class Bot : MonoBehaviour
         BaseWasBuilded?.Invoke(this);
     }
 
-    private IEnumerator DelayedSubscribe()
+    private void SubscribeToNewBase()
     {
-        yield return _subscribeDelay;
-
-        if (_newBase != null)
-        {
-            _newBase.SubscribeToBot(this);
-        }
-    }
-
-    public void SetTarget(Barrel barrel)
-    {
-        if (barrel != null)
-        {
-            IsActive = true;
-            _targetBarrel = barrel;
-            _mover.MoveToBarrel(barrel.transform.position);
-            _animator.SetupWalk();
-        }
-    }
-
-    public void SetFlagPosition(Vector3 position)
-    {
-        IsActive = true;
-        _mover.MoveToFlag(position);
-        _animator.SetupWalk();
-    }
-
-    public void SubscribeToNewBase()
-    {
-        StartCoroutine(DelayedSubscribe());
+        if (_newBase.TryGetComponent(out BotStorage storage))
+            storage.AddBot(this);
     }
 }

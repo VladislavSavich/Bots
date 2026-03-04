@@ -12,7 +12,6 @@ public class BaseBuilder : MonoBehaviour
         Base building = Instantiate(_prefab);
         building.transform.position = transform.position;
         building.transform.SetParent(transform.parent);
-        building.Initialize();
         BaseBuilded?.Invoke(building);
     }
 }

@@ -29,7 +29,7 @@ public class Base : MonoBehaviour
     {
         Initialize();
 
-        _storage.OnBotAdded += SubscribeToBot;
+        _storage.BotAdded += SubscribeToBot;
         _scanner.BarrelDetected += _barrelService.AddTask;
         _barrelService.TaskReceived += StartTask;
         _counter.CountChanged += CheckNumbersOfBot;
@@ -37,19 +37,22 @@ public class Base : MonoBehaviour
         _mainCoroutine = StartCoroutine(TaskLoop());
     }
 
-    public void Initialize()
-    {
-        _barrelService = GetComponentInParent<BarrelService>();
-        _barrelSpawner = GetComponentInParent<BarrelSpawner>();
-        _botService = GetComponentInParent<BotService>();
-    }
-
     private void OnDisable()
     {
-        _storage.OnBotAdded -= SubscribeToBot;
+        _storage.BotAdded -= SubscribeToBot;
         _scanner.BarrelDetected -= _barrelService.AddTask;
         _barrelService.TaskReceived -= StartTask;
         _counter.CountChanged -= CheckNumbersOfBot;
+    }
+
+    public void StartColonization()
+    {
+        if(!_isColonizationStarted)
+        {
+            _flagMaker.DestroyFlag();
+            _flagMaker.StopWaitingCoroutine();
+            _flagMaker.StartWaitingForFlag();
+        }
     }
 
     private void CheckNumbersOfBot()
@@ -65,39 +68,21 @@ public class Base : MonoBehaviour
     {
         while (_botService.HasFreeBots(_storage.GetAllBots()) && _barrelService.HasTasks)
         {
-            if (_botService.TryGetFreeBot(_storage.GetAllBots(), out Bot bot))
+            if (!_botService.TryGetFreeBot(_storage.GetAllBots(), out Bot bot))
+                continue;
+
+            if (_flagMaker.IsFlagStand && _counter.BarrelsCount >= _barrelsForBase && !_isColonizationStarted && _storage.NumberOfBots > _minBotForColonization)
             {
-                if (_flagMaker.IsFlagStand && _counter.BarrelsCount >= _barrelsForBase && !_isColonizationStarted && _storage.NumberOfBots > _minBotForColonization)
-                {
-                    bot.SetFlagPosition(_flagMaker.FlagPosition);
-                    _isColonizationStarted = true;
-                }
-                else
-                {
-                    if (_barrelService.TryGetTask(out Barrel barrel))
-                    {
-                        bot.SetTarget(barrel);
-                    }
-                    else
-                    {
-                        continue;
-                    }
-                }
+                bot.SetFlagPosition(_flagMaker.FlagPosition);
+                _isColonizationStarted = true;
             }
             else
             {
-                continue;
+                if (!_barrelService.TryGetTask(out Barrel barrel))
+                    continue;
+
+                bot.SetTarget(barrel);
             }
-        }
-    }
-
-    private IEnumerator TaskLoop()
-    {
-        while (enabled)
-        {
-            yield return _delay;
-
-            StartTask();
         }
     }
 
@@ -107,7 +92,7 @@ public class Base : MonoBehaviour
         _flagMaker.StopWaitingCoroutine();
         _isColonizationStarted = false;
         UnsubscribeToBot(bot);
-        bot.SubscribeToNewBase();
+        bot.SubscribeWithDelay();
         _counter.ReduceCount(_barrelsForBase);
     }
 
@@ -118,30 +103,33 @@ public class Base : MonoBehaviour
         _counter.AddCount();
     }
 
-    public void StartColonization()
+    private void SubscribeToBot(Bot bot)
     {
-        _flagMaker.DestroyFlag();
-        _flagMaker.StopWaitingCoroutine();
-        _flagMaker.StartWaitingForFlag();
+        bot.BarrelWasDelivered += TaskComplete;
+        bot.BaseWasBuilded += CompleteColonization;
     }
 
-    public void UnsubscribeToBot(Bot bot)
+    private void UnsubscribeToBot(Bot bot)
     {
         bot.BarrelWasDelivered -= TaskComplete;
         bot.BaseWasBuilded -= CompleteColonization;
         _storage.RemoveBot(bot);
     }
 
-    public void SubscribeToBot(Bot bot)
+    private void Initialize()
     {
-        if (_storage.ContainsBot(bot))
+        _barrelService = GetComponentInParent<BarrelService>();
+        _barrelSpawner = GetComponentInParent<BarrelSpawner>();
+        _botService = GetComponentInParent<BotService>();
+    }
+
+    private IEnumerator TaskLoop()
+    {
+        while (enabled)
         {
-            bot.BarrelWasDelivered += TaskComplete;
-            bot.BaseWasBuilded += CompleteColonization;
-        }
-        else
-        {
-            _storage.AddBot(bot);
+            yield return _delay;
+
+            StartTask();
         }
     }
 }

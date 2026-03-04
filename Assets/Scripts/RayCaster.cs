@@ -1,17 +1,17 @@
+using System;
 using UnityEngine;
 
 public class RayCaster : MonoBehaviour
 {
     [SerializeField] private Camera _camera;
+    [SerializeField] private InputReader _inputReader;
 
     private Ray _ray;
 
     private void Update()
     {
-        if (Input.GetMouseButtonDown(0))
-        {
+        if (_inputReader.GetIsTouch())
             Hit();
-        }
     }
 
     private void Hit()
@@ -20,7 +20,7 @@ public class RayCaster : MonoBehaviour
 
         if (Physics.Raycast(_ray, out RaycastHit hit, Mathf.Infinity))
         {
-            if (hit.collider.TryGetComponent<Base>(out Base building))
+            if (hit.collider.TryGetComponent(out Base building))
                 building.StartColonization();
         }
     }

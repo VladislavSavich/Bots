@@ -8,7 +8,7 @@ public class BotStorage : MonoBehaviour
 
     public int NumberOfBots => _bots.Count;
 
-    public event Action<Bot> OnBotAdded;
+    public event Action<Bot> BotAdded;
 
     public bool ContainsBot(Bot bot)
     {
@@ -20,7 +20,7 @@ public class BotStorage : MonoBehaviour
         if (!_bots.Contains(bot))
         {
             _bots.Add(bot);
-            OnBotAdded?.Invoke(bot);
+            BotAdded?.Invoke(bot);
         }
     }
 
